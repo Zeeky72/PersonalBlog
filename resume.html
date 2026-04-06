@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume | Prayash Poudel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Resume Specific Styles & Animations */
+        .resume-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .resume-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .resume-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Timeline Styles for Experience & Education */
+        .timeline {
+            border-left: 2px solid #334155;
+            padding-left: 2rem;
+            margin-left: 1rem;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2.4rem;
+            top: 0;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 3px solid var(--bg-color);
+            transition: var(--transition);
+        }
+
+        .timeline-item:hover::before {
+            background: var(--accent-hover);
+            transform: scale(1.2);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .timeline-date {
+            color: var(--accent);
+            font-size: 0.85rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .timeline-title {
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-subtitle {
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .timeline-content ul {
+            padding-left: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        .timeline-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Sidebar Styles (Skills, Certs, etc.) */
+        .sidebar-section {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent);
+        }
+
+        /* Skill Tags */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .skill-tag {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--text-primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            transition: var(--transition);
+        }
+
+        .skill-tag:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .cert-list, .lang-list {
+            list-style: none;
+            padding: 0;
+            color: var(--text-secondary);
+        }
+
+        .cert-list li, .lang-list li {
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        /* --- Scroll Animation Classes --- */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+
+    <main class="container">
+        
+        <section class="resume-header animate-on-scroll">
+            <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">Prayash <span class="accent-text">Poudel</span></h1>
+            <p style="font-size: 1.2rem; color: var(--text-secondary);">Associate Software Engineer</p>
+            
+            <div class="contact-info">
+                <span>📍 Pokhara, Nepal</span>
+                <span>📞 +977 9869079525</span>
+                <span>✉️ Prayash2002y@gmail.com</span>
+            </div>
+
+            <p style="margin-top: 2rem; max-width: 800px; margin-left: auto; margin-right: auto; text-align: justify; color: var(--text-secondary);">
+                Associate Software Engineer with experience designing and developing robust, scalable web applications using C# and ASP.NET with MS SQL Server. Proficient in building responsive user interfaces with JavaScript, HTML, CSS, and Angular, and integrating RESTful APIs to enable efficient and secure data exchange. Recognized for analytical problem-solving, clean code practices, and delivering reliable, maintainable solutions.
+            </p>
+        </section>
+
+        <div class="resume-grid">
+            
+            <div class="main-column">
+                
+                <h2 class="accent-text animate-on-scroll">Experience</h2>
+                <div class="timeline">
+                    
+                    <div class="timeline-item animate-on-scroll">
+                        <span class="timeline-date">March 2024 - November 2025</span>
+                        <h3 class="timeline-title">Associate Software Engineer</h3>
+                        <p class="timeline-subtitle">Tejas Softech (India) Pvt Ltd | Bangalore, India</p>
+                        <div class="timeline-content">
+                            <ul>
+                                <li>Developed and implemented software solutions to meet client specifications and deadlines, enhancing user experience and operational efficiency.</li>
+                                <li>Collaborated with cross-functional teams to identify system requirements, improving project outcomes through effective communication.</li>
+                                <li>Monitored system performance and rectified post-deployment issues for optimal service.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item animate-on-scroll">
+                        <span class="timeline-date">Sept 2021 - Dec 2021</span>
+                        <h3 class="timeline-title">Angular Development Associate</h3>
+                        <p class="timeline-subtitle">The Entrepreneurship Network | New Delhi, India</p>
+                        <div class="timeline-content">
+                            <ul>
+                                <li>Utilised JavaScript, HTML, and CSS to create interactive and visually appealing web pages.</li>
+                                <li>Integrated RESTful APIs into Angular applications, facilitating seamless data exchange between client and server.</li>
+                                <li>Optimised web design and user interface through effective UX testing.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="accent-text animate-on-scroll" style="margin-top: 4rem;">Education</h2>
+                <div class="timeline">
+                    
+                    <div class="timeline-item animate-on-scroll">
+                        <span class="timeline-date">Sept 2020 - Sept 2023</span>
+                        <h3 class="timeline-title">BCA Software Development</h3>
+                        <p class="timeline-subtitle">ISBR Business School, Bangalore University | Bengaluru</p>
+                        <div class="timeline-content">
+                            <ul>
+                                <li><strong>Grade:</strong> 86.7% (CGPA: 8.67)</li>
+                                <li>Coursework in web development, database management, and software engineering.</li>
+                                <li>President of the IT Club: organized cloud fair seminars, a hackathon, and a lecture on ASP.NET for freshers.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item animate-on-scroll">
+                        <span class="timeline-date">April 2017 - April 2019</span>
+                        <h3 class="timeline-title">Higher Secondary Science</h3>
+                        <p class="timeline-subtitle">Manakamana Secondary School | Kathmandu, Nepal</p>
+                        <div class="timeline-content">
+                            <ul>
+                                <li><strong>GPA:</strong> 2.93/4 (73%)</li>
+                                <li>Coursework in Physics, Biology, Chemistry, and Mathematics.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <aside class="sidebar-column">
+                
+                <div class="sidebar-section animate-on-scroll">
+                    <h3 class="sidebar-title">Technical Skills</h3>
+                    <div class="skills-container">
+                        <span class="skill-tag">C#</span>
+                        <span class="skill-tag">.NET Core / ASP.NET</span>
+                        <span class="skill-tag">MS SQL Server</span>
+                        <span class="skill-tag">Angular</span>
+                        <span class="skill-tag">JavaScript</span>
+                        <span class="skill-tag">Java</span>
+                        <span class="skill-tag">C++ / C</span>
+                        <span class="skill-tag">HTML & CSS</span>
+                        <span class="skill-tag">RESTful APIs</span>
+                        <span class="skill-tag">Flutter</span>
+                        <span class="skill-tag">.NET MAUI</span>
+                        <span class="skill-tag">OOP & SOLID</span>
+                        <span class="skill-tag">SDLC</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-section animate-on-scroll">
+                    <h3 class="sidebar-title">Certifications</h3>
+                    <ul class="cert-list">
+                        <li><strong>Full stack .Net developer</strong><br>Pragim Technologies (2019-2020)</li>
+                        <li><strong>Agile Methodology</strong><br>Cognizant (2021)</li>
+                        <li><strong>TCS ION Career Edge</strong><br>Young Professional, TCSION (2021)</li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-section animate-on-scroll">
+                    <h3 class="sidebar-title">Languages</h3>
+                    <ul class="lang-list">
+                        <li><strong>English</strong> - Fluent</li>
+                        <li><strong>Hindi</strong> - Fluent</li>
+                        <li><strong>Nepali</strong> - Fluent</li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-section animate-on-scroll">
+                    <h3 class="sidebar-title">Interests</h3>
+                    <div class="skills-container">
+                        <span class="skill-tag">Trekking</span>
+                        <span class="skill-tag">Outdoor Games</span>
+                        <span class="skill-tag">Music</span>
+                        <span class="skill-tag">Cooking</span>
+                        <span class="skill-tag">Fitness</span>
+                    </div>
+                </div>
+
+            </aside>
+        </div>
+    </main>
+
+    <script src="nav.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.15 // Trigger when 15% of the element is visible
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // Optional: Stop observing once animated
+                        observer.unobserve(entry.target); 
+                    }
+                });
+            }, observerOptions);
+
+            // Select all elements with the animation class and observe them
+            const elementsToAnimate = document.querySelectorAll('.animate-on-scroll');
+            elementsToAnimate.forEach(el => observer.observe(el));
+        });
+    </script>
+</body>
+</html>

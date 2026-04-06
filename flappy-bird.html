@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Duck | Arcade</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2rem;
+        }
+        
+        canvas {
+            background-color: #0f172a; /* Matches portfolio background */
+            border: 2px solid #334155;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            max-width: 100%;
+            cursor: pointer; /* Suggests clicking */
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 3rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .score-box { 
+            background: var(--card-bg); 
+            padding: 0.75rem 2rem; 
+            border-radius: 8px; 
+            border: 1px solid #334155; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .controls-hint { 
+            margin-top: 1.5rem; 
+            color: var(--text-secondary); 
+            font-size: 0.95rem; 
+            text-align: center;
+        }
+
+        /* Overlay for Game Over / Start */
+        .game-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--accent);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+            z-index: 10;
+        }
+        
+        .game-area {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+
+    <div class="container" style="padding-top: 2rem; padding-bottom: 0;">
+        <a href="arcade.html" class="btn" style="background: transparent; border: 1px solid var(--accent); color: var(--accent);">← Back to Arcade</a>
+    </div>
+
+    <div class="game-wrapper container">
+        
+        <div class="scoreboard">
+            <div class="score-box">Score: <span id="score" class="accent-text">0</span></div>
+            <div class="score-box">High Score: <span id="high-score" class="accent-text">0</span></div>
+        </div>
+        
+        <div class="game-area">
+            <canvas id="gameCanvas" width="400" height="500"></canvas>
+            
+            <div id="game-over" class="game-overlay" style="display: none;">
+                <h2 style="color: #ef4444; margin-bottom: 0.5rem;">Game Over!</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">The duck crashed.</p>
+                <button id="restart-btn" class="btn">Play Again</button>
+            </div>
+
+            <div id="start-screen" class="game-overlay">
+                <h2 class="accent-text" style="margin-bottom: 0.5rem;">Flappy Duck</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Click or press Space to flap!</p>
+                <button id="start-btn" class="btn">Start Game</button>
+            </div>
+        </div>
+        
+        <p class="controls-hint">
+            <strong>Controls:</strong> Press Spacebar, Up Arrow, or Click the game area to flap.<br>
+        </p>
+    </div>
+
+    <script src="nav.js"></script>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreEl = document.getElementById("score");
+        const highScoreEl = document.getElementById("high-score");
+        
+        const gameOverScreen = document.getElementById("game-over");
+        const startScreen = document.getElementById("start-screen");
+        const restartBtn = document.getElementById("restart-btn");
+        const startBtn = document.getElementById("start-btn");
+
+        // Load High Score
+        let highScore = localStorage.getItem("flappyHighScore") || 0;
+        highScoreEl.innerText = highScore;
+
+        // Game Variables
+        let frames = 0;
+        let score = 0;
+        let gameRunning = false;
+        let animationId;
+
+        // The Duck (Player)
+        const duck = {
+            x: 50,
+            y: 150,
+            width: 34, // Approximate width of the emoji hit-box
+            height: 34,
+            velocity: 0,
+            gravity: 0.25,
+            lift: -6,
+            draw: function() {
+                ctx.font = "34px Arial";
+                ctx.textAlign = "left";
+                ctx.textBaseline = "top";
+                
+                // Add a slight rotation based on velocity for realism
+                ctx.save();
+                ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+                
+                // If falling, rotate down. If jumping, rotate up.
+                let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.1)));
+                ctx.rotate(rotation);
+                
+                ctx.fillText("🦆", -this.width / 2, -this.height / 2);
+                ctx.restore();
+            },
+            update: function() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+
+                // Hit the floor
+                if (this.y + this.height >= canvas.height) {
+                    this.y = canvas.height - this.height;
+                    triggerGameOver();
+                }
+                
+                // Hit the ceiling
+                if (this.y <= 0) {
+                    this.y = 0;
+                    this.velocity = 0;
+                }
+            },
+            flap: function() {
+                this.velocity = this.lift;
+            }
+        };
+
+        // Pipes (Obstacles)
+        const pipes = {
+            array: [],
+            width: 50,
+            gap: 140, // Space between top and bottom pipe
+            dx: 2.5,  // Speed the pipes move left
+            draw: function() {
+                for (let i = 0; i < this.array.length; i++) {
+                    let p = this.array[i];
+                    
+                    // Draw Top Pipe
+                    ctx.fillStyle = "#38bdf8"; // Your var(--accent) color
+                    ctx.fillRect(p.x, 0, this.width, p.top);
+                    
+                    // Draw Bottom Pipe
+                    ctx.fillRect(p.x, canvas.height - p.bottom, this.width, p.bottom);
+                    
+                    // Add some borders for styling
+                    ctx.strokeStyle = "#0284c7";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(p.x, 0, this.width, p.top);
+                    ctx.strokeRect(p.x, canvas.height - p.bottom, this.width, p.bottom);
+                }
+            },
+            update: function() {
+                // Spawn a new pipe every 100 frames
+                if (frames % 100 === 0) {
+                    // Randomize pipe height
+                    let minPipeHeight = 50;
+                    let maxPipeHeight = canvas.height - this.gap - minPipeHeight;
+                    let topHeight = Math.floor(Math.random() * (maxPipeHeight - minPipeHeight + 1) + minPipeHeight);
+                    let bottomHeight = canvas.height - this.gap - topHeight;
+
+                    this.array.push({
+                        x: canvas.width,
+                        top: topHeight,
+                        bottom: bottomHeight,
+                        passed: false // To track scoring
+                    });
+                }
+
+                for (let i = 0; i < this.array.length; i++) {
+                    let p = this.array[i];
+                    p.x -= this.dx; // Move pipe left
+
+                    // Collision Detection
+                    // Check if duck's X overlaps pipe's X
+                    if (duck.x + duck.width > p.x && duck.x < p.x + this.width) {
+                        // Check if duck hits top pipe OR bottom pipe
+                        if (duck.y < p.top || duck.y + duck.height > canvas.height - p.bottom) {
+                            triggerGameOver();
+                        }
+                    }
+
+                    // Score Update (if pipe passes duck)
+                    if (p.x + this.width < duck.x && !p.passed) {
+                        score++;
+                        scoreEl.innerText = score;
+                        p.passed = true;
+                    }
+
+                    // Remove pipes that go off screen to save memory
+                    if (p.x + this.width < 0) {
+                        this.array.shift();
+                        i--;
+                    }
+                }
+            },
+            reset: function() {
+                this.array = [];
+            }
+        };
+
+        // Main Game Loop
+        function loop() {
+            if (!gameRunning) return;
+
+            // Clear Canvas
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            duck.draw();
+            duck.update();
+
+            pipes.draw();
+            pipes.update();
+
+            frames++;
+            animationId = requestAnimationFrame(loop);
+        }
+
+        // Setup & Triggers
+        function initGame() {
+            duck.y = 150;
+            duck.velocity = 0;
+            pipes.reset();
+            score = 0;
+            frames = 0;
+            scoreEl.innerText = score;
+            
+            gameOverScreen.style.display = "none";
+            startScreen.style.display = "none";
+            
+            gameRunning = true;
+            loop();
+        }
+
+        function triggerGameOver() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("flappyHighScore", highScore);
+                highScoreEl.innerText = highScore;
+            }
+            
+            gameOverScreen.style.display = "flex";
+        }
+
+        // Input Listeners
+        function handleInput(e) {
+            // Prevent default scrolling for spacebar and arrows
+            if (e.type === 'keydown' && [32, 38].includes(e.keyCode)) {
+                e.preventDefault();
+            }
+
+            if (gameRunning) {
+                // If pressing Space (32) or Up Arrow (38) or clicking
+                if (e.type === 'mousedown' || (e.type === 'keydown' && (e.keyCode === 32 || e.keyCode === 38))) {
+                    duck.flap();
+                }
+            }
+        }
+
+        // Event Listeners
+        document.addEventListener("keydown", handleInput);
+        canvas.addEventListener("mousedown", handleInput);
+        
+        startBtn.addEventListener("click", initGame);
+        restartBtn.addEventListener("click", initGame);
+
+        // Initial Draw (just the background before start)
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    </script>
+</body>
+</html>

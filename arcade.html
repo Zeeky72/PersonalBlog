@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Arcade | Prayash Poudel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Arcade Card Hover Effects */
+        .game-card {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent);
+        }
+
+        .game-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* The Mysterious 8th Card */
+        #secret-card {
+            border: 1px dashed #334155;
+            background: transparent;
+            opacity: 0.6;
+            transition: var(--transition);
+        }
+
+        #secret-card:hover {
+            opacity: 1;
+            border-color: #ff1493;
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+
+    <main class="container">
+        <h1 class="accent-text" style="text-align: center;">The Arcade</h1>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem;">Select a game to test your logic and reflexes.</p>
+
+        <div class="grid">
+            <a href="guess-word.html" class="card game-card">
+                <div class="game-icon">🔤</div>
+                <h3>Guess the Word</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">Deduction & Vocabulary</p>
+            </a>
+
+            <a href="snake.html" class="card game-card">
+                <div class="game-icon">🐍</div>
+                <h3>Classic Snake</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">Speed & Reflexes</p>
+            </a>
+
+            <a href="flappy-bird.html" class="card game-card">
+                <div class="game-icon">🦅</div>
+                <h3>Flappy Bird</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">Timing & Patience</p>
+            </a>
+
+            <a href="racing.html" class="card game-card">
+                <div class="game-icon">🏎️</div>
+                <h3>Retro Racing</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">Avoid the Obstacles</p>
+            </a>
+
+            <a href="tic-tac-toe.html" class="card game-card">
+                <div class="game-icon">❌⭕</div>
+                <h3>Tic-Tac-Toe</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">Strategy & Logic</p>
+            </a>
+
+            <a href="whack-a-mole.html" class="card game-card">
+                <div class="game-icon">🔨</div>
+                <h3>Whack-a-Mole</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">Precision & Speed</p>
+            </a>
+
+            <a href="memory-match.html" class="card game-card">
+                <div class="game-icon">🧠</div>
+                <h3>Memory Match</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">Focus & Recall</p>
+            </a>
+
+            <a href="surprise.html" id="secret-card" class="card game-card">
+                <div class="game-icon" style="filter: grayscale(1);">❓</div>
+                <h3 style="color: var(--text-secondary);">Unknown File</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">Requires Access Code</p>
+            </a>
+        </div>
+    </main>
+
+    <script src="nav.js"></script>
+</body>
+</html>

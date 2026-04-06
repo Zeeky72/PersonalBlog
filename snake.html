@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Snake | Arcade</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2rem;
+        }
+        
+        canvas {
+            background-color: #0f172a; /* Matches your portfolio background */
+            border: 2px solid #334155;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            max-width: 100%;
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 3rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .score-box { 
+            background: var(--card-bg); 
+            padding: 0.75rem 2rem; 
+            border-radius: 8px; 
+            border: 1px solid #334155; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .controls-hint { 
+            margin-top: 1.5rem; 
+            color: var(--text-secondary); 
+            font-size: 0.95rem; 
+            text-align: center;
+        }
+
+        /* Overlay for Game Over */
+        .game-over-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--accent);
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+        }
+        
+        .game-area {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+
+    <div class="container" style="padding-top: 2rem; padding-bottom: 0;">
+        <a href="arcade.html" class="btn" style="background: transparent; border: 1px solid var(--accent); color: var(--accent);">← Back to Arcade</a>
+    </div>
+
+    <div class="game-wrapper container">
+        
+        <div class="scoreboard">
+            <div class="score-box">Apples: <span id="score" class="accent-text">0</span></div>
+            <div class="score-box">High Score: <span id="high-score" class="accent-text">0</span></div>
+        </div>
+        
+        <div class="game-area">
+            <canvas id="gameCanvas" width="400" height="400"></canvas>
+            
+            <div id="game-over" class="game-over-overlay">
+                <h2 style="color: #ef4444; margin-bottom: 0.5rem;">Game Over!</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">You bit your own tail.</p>
+                <button id="restart-btn" class="btn">Play Again</button>
+            </div>
+        </div>
+        
+        <p class="controls-hint">
+            <strong>Controls:</strong> Arrow Keys to move.<br>
+            <em>Pro tip: You can pass through walls! Don't bite yourself.</em>
+        </p>
+    </div>
+
+    <script src="nav.js"></script>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreEl = document.getElementById("score");
+        const highScoreEl = document.getElementById("high-score");
+        const gameOverScreen = document.getElementById("game-over");
+        const restartBtn = document.getElementById("restart-btn");
+
+        const gridSize = 20;
+        let snake, food, dx, dy, score, baseSpeed, gameLoopTimeout;
+        let changingDirection = false;
+        
+        // Load High Score from Local Storage
+        let highScore = localStorage.getItem("snakeHighScore") || 0;
+        highScoreEl.innerText = highScore;
+
+        function initGame() {
+            // Start snake in the middle
+            snake = [
+                { x: 200, y: 200 },
+                { x: 180, y: 200 },
+                { x: 160, y: 200 }
+            ];
+            
+            score = 0;
+            dx = gridSize; // Start moving right
+            dy = 0;
+            baseSpeed = 160; // Initial slower speed in ms
+            
+            scoreEl.innerText = score;
+            gameOverScreen.style.display = "none";
+            
+            spawnFood();
+            if(gameLoopTimeout) clearTimeout(gameLoopTimeout);
+            main();
+        }
+
+        function main() {
+            if (hasGameEnded()) {
+                gameOverScreen.style.display = "flex";
+                return;
+            }
+
+            changingDirection = false;
+
+            // Speed up calculation: subtract 3ms per apple, but never go faster than 60ms
+            let currentSpeed = Math.max(60, baseSpeed - (score * 3));
+            
+            gameLoopTimeout = setTimeout(function onTick() {
+                clearCanvas();
+                drawFood();
+                advanceSnake();
+                drawSnake();
+                main();
+            }, currentSpeed);
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = "#0f172a"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawSnake() {
+            snake.forEach((part, index) => {
+                // Vibrant Gradient Logic using HSL colors
+                // Base hue is 190 (Cyan), and shifts towards Purple/Pink as the index increases
+                const hue = (190 + (index * 8)) % 360; 
+                
+                if (index === 0) {
+                    // Head of the snake
+                    ctx.fillStyle = `hsl(${hue}, 100%, 70%)`;
+                } else {
+                    // Body of the snake
+                    ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                }
+                
+                // Draw a slightly smaller rect to create a "segmented" look
+                ctx.fillRect(part.x + 1, part.y + 1, gridSize - 2, gridSize - 2);
+            });
+        }
+
+        function advanceSnake() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+            // --- WALL WRAPPING LOGIC ---
+            if (head.x < 0) {
+                head.x = canvas.width - gridSize;
+            } else if (head.x >= canvas.width) {
+                head.x = 0;
+            }
+            
+            if (head.y < 0) {
+                head.y = canvas.height - gridSize;
+            } else if (head.y >= canvas.height) {
+                head.y = 0;
+            }
+
+            snake.unshift(head);
+
+            // Did the snake eat the apple?
+            if (head.x === food.x && head.y === food.y) {
+                score += 1;
+                scoreEl.innerText = score;
+                
+                // Update High Score
+                if(score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("snakeHighScore", highScore);
+                    highScoreEl.innerText = highScore;
+                }
+                
+                spawnFood();
+            } else {
+                // If it didn't eat, remove the tail so it moves forward
+                snake.pop();
+            }
+        }
+
+        function drawFood() {
+            // Draw an apple emoji!
+            ctx.font = `${gridSize - 2}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🍎", food.x + (gridSize / 2), food.y + (gridSize / 2));
+        }
+
+        function spawnFood() {
+            // Ensure food doesn't spawn ON the snake
+            let isOccupied = true;
+            while(isOccupied) {
+                food = {
+                    x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
+                    y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize
+                };
+                
+                isOccupied = false;
+                for (let part of snake) {
+                    if (part.x === food.x && part.y === food.y) {
+                        isOccupied = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        function hasGameEnded() {
+            // Self-Collision Check: Only check from index 4 onwards 
+            // (impossible to hit parts 1, 2, or 3 of your own body)
+            for (let i = 4; i < snake.length; i++) {
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // --- CONTROLS ---
+        document.addEventListener("keydown", changeDirection);
+
+        function changeDirection(event) {
+            const LEFT_KEY = 37, RIGHT_KEY = 39, UP_KEY = 38, DOWN_KEY = 40;
+            const keyPressed = event.keyCode;
+            
+            // Prevent default browser scrolling when playing
+            if([37, 38, 39, 40].includes(keyPressed)) {
+                event.preventDefault();
+            }
+
+            if (changingDirection) return;
+
+            const goingUp = dy === -gridSize;
+            const goingDown = dy === gridSize;
+            const goingRight = dx === gridSize;
+            const goingLeft = dx === -gridSize;
+
+            if (keyPressed === LEFT_KEY && !goingRight) {
+                dx = -gridSize; dy = 0; changingDirection = true;
+            }
+            if (keyPressed === UP_KEY && !goingDown) {
+                dx = 0; dy = -gridSize; changingDirection = true;
+            }
+            if (keyPressed === RIGHT_KEY && !goingLeft) {
+                dx = gridSize; dy = 0; changingDirection = true;
+            }
+            if (keyPressed === DOWN_KEY && !goingUp) {
+                dx = 0; dy = gridSize; changingDirection = true;
+            }
+        }
+
+        restartBtn.addEventListener("click", initGame);
+
+        // Start game on load
+        initGame();
+    </script>
+</body>
+</html>

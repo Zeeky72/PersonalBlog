@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Word | Arcade</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .game-container {
+            max-width: 700px;
+            margin: 4rem auto;
+            text-align: center;
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            min-height: 500px;
+        }
+        
+        /* Category Selection Styles */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .cat-btn {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155;
+            color: var(--text-primary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .cat-btn:hover {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.1);
+            transform: translateY(-3px);
+        }
+
+        /* Hangman Word Display */
+        .word-display {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .letter-box {
+            width: 40px;
+            height: 50px;
+            border-bottom: 3px solid var(--accent);
+            font-size: 2.5rem;
+            font-family: monospace;
+            font-weight: bold;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+        }
+
+        /* Virtual Keyboard */
+        .keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .key-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            color: white;
+            width: 40px;
+            height: 45px;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .key-btn:hover:not(:disabled) {
+            background: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .key-btn:disabled {
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .key-btn.correct {
+            background: #22c55e; /* Green */
+            border-color: #22c55e;
+            color: white;
+        }
+
+        .key-btn.wrong {
+            background: transparent;
+            border-color: #ef4444; /* Red */
+            color: #ef4444;
+            opacity: 0.5;
+        }
+        
+        /* Game Stats */
+        .message { font-size: 1.1rem; margin-bottom: 1.5rem; min-height: 50px; }
+        .hint { color: var(--text-secondary); font-style: italic; }
+        .error { color: #ef4444; font-weight: bold; }
+        .success { color: #22c55e; font-weight: bold; }
+        .tries-left { color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+
+    <div class="container" style="padding-top: 2rem; padding-bottom: 0;">
+        <a href="arcade.html" class="btn" style="background: transparent; border: 1px solid var(--accent); color: var(--accent);">← Back to Arcade</a>
+    </div>
+
+    <div class="game-container">
+        
+        <div id="category-view">
+            <h2 class="accent-text">Guess the Word</h2>
+            <p style="color: var(--text-secondary);">Select a category to begin deciphering.</p>
+            
+            <div class="category-grid">
+                <button class="cat-btn" onclick="startGame('coding')">💻 Coding</button>
+                <button class="cat-btn" onclick="startGame('nature')">🌲 Nature</button>
+                <button class="cat-btn" onclick="startGame('romance')">💖 Romance</button>
+                <button class="cat-btn" onclick="startGame('sports')">⚽ Sports</button>
+                <button class="cat-btn" onclick="startGame('others')">🔮 Others</button>
+            </div>
+        </div>
+
+        <div id="game-view" style="display: none;">
+            <h2 class="accent-text" id="game-title">Category Name</h2>
+            
+            <p class="tries-left">Mistakes remaining: <strong id="tries-count" style="color: #ef4444; font-size: 1.3rem;">5</strong></p>
+            
+            <div class="word-display" id="word-display">
+                </div>
+            
+            <div class="message" id="message-board">
+                <span class="hint" id="hint-display">Hint: Loading...</span>
+            </div>
+
+            <div class="keyboard" id="keyboard">
+                </div>
+            
+            <div id="game-over-controls" style="display: none;">
+                <button class="btn" onclick="initGame()" style="width: 48%;">Next Word</button>
+                <button class="btn" onclick="showCategories()" style="background: transparent; border: 1px solid #334155; width: 48%;">Categories</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="nav.js"></script>
+    
+    <script>
+        // The Massive Word Dictionary
+        const wordBank = {
+            coding: [
+                { word: "SERVER", hints: ["Runs continuously", "Handles client requests", "Waiters do this too", "Provides resources to a network", "Rhymes with 'fervor'"] },
+                { word: "DATABASE", hints: ["Stores information", "SQL or NoSQL", "Collection of tables", "Where your users live", "Starts with 'DATA'"] },
+                { word: "ROUTER", hints: ["Directs traffic", "Networking device", "Connects different networks", "You have one at home for Wi-Fi", "Finds the best path"] },
+                { word: "PYTHON", hints: ["A programming language", "Named after a comedy group", "Also a large snake", "Uses indentation for scope", "Has a popular web framework called Django"] },
+                { word: "FRONTEND", hints: ["User interface", "What the client sees", "HTML, CSS, JS", "Client-side development", "Opposite of Backend"] },
+                { word: "COMPILER", hints: ["Translates code", "Turns high-level to low-level", "Finds syntax errors before running", "C++ uses this heavily", "Starts with C"] },
+                { word: "DEBUGGING", hints: ["Fixing issues", "Removing software errors", "Named after an insect in a computer", "Programmers spend 80% of time doing this", "Breakpoints are used for this"] },
+                { word: "TERMINAL", hints: ["Command line interface", "Black screen with text", "Where you type bash commands", "Hackers in movies stare at this", "Also means the end of a train line"] },
+                { word: "VARIABLE", hints: ["Stores a value", "Can change during execution", "Declared with let, const, or var", "Holds data in memory", "x and y in math"] },
+                { word: "GITHUB", hints: ["Version control hosting", "Owned by Microsoft", "Where open source lives", "Has a mascot called the Octocat", "You push commits here"] }
+            ],
+            nature: [
+                { word: "MOUNTAIN", hints: ["High elevation", "Has a peak", "Everest is the tallest", "Often capped with snow", "Created by tectonic plates"] },
+                { word: "OCEAN", hints: ["Vast body of water", "Covers 71% of Earth", "Contains coral reefs", "Pacific, Atlantic, Indian...", "Salty"] },
+                { word: "VOLCANO", hints: ["Erupts", "Contains magma", "Found in the Ring of Fire", "Creates lava", "Pompeii was destroyed by one"] },
+                { word: "GALAXY", hints: ["Collection of stars", "Contains planets and dust", "Ours is the Milky Way", "Held together by gravity", "Billions of them in the universe"] },
+                { word: "WEATHER", hints: ["Atmospheric condition", "Rain, snow, or shine", "Meteorologists study this", "Changes daily", "Climate is what you expect, this is what you get"] },
+                { word: "SUNSET", hints: ["Evening occurrence", "When the sky turns orange", "Opposite of dawn", "Happens in the West", "Beautiful end to the day"] },
+                { word: "GLACIER", hints: ["Mass of moving ice", "Found at the poles", "Carves valleys", "Melting due to climate change", "Titanic hit a chunk of one"] },
+                { word: "DESERT", hints: ["Arid landscape", "Very little rain", "Sahara is a famous one", "Home to cacti and camels", "Gets cold at night"] },
+                { word: "WILDLIFE", hints: ["Untamed animals", "Living in their natural habitat", "Found in jungles and forests", "Subject of nature documentaries", "Starts with W"] },
+                { word: "FOREST", hints: ["Dense area of trees", "Provides oxygen", "Home to deer and bears", "The Amazon is a rainforest version", "Woods"] }
+            ],
+            romance: [
+                { word: "FOREVER", hints: ["Without end", "A long time", "Till death do us part", "Eternity", "Always"] },
+                { word: "PASSION", hints: ["Strong emotion", "Intense feeling", "Often associated with the color red", "Fiery love", "Starts with P"] },
+                { word: "PROMISE", hints: ["A commitment", "A vow", "You keep it or break it", "Engagement rings represent this", "A declaration of intent"] },
+                { word: "CUDDLES", hints: ["Physical affection", "Holding close", "Cozy activity", "Snuggling", "Better in cold weather"] },
+                { word: "DARLING", hints: ["Term of endearment", "Affectionate nickname", "Synonym for sweetheart", "Starts with D", "Rhymes with starling"] },
+                { word: "DEVOTION", hints: ["Profound dedication", "Loyalty", "Commitment to someone", "Unwavering love", "Starts with D"] },
+                { word: "KISSES", hints: ["Signs of affection", "Touching lips", "Hershey makes a chocolate named this", "Given on cheeks or lips", "X's in XOXO"] },
+                { word: "VALENTINE", hints: ["February 14th", "Holiday of love", "You give cards for this", "Cupid's favorite day", "Named after a Saint"] },
+                { word: "BELOVED", hints: ["Dearly loved", "Cherished person", "Often used in wedding vows", "Someone you adore", "Starts with B"] },
+                { word: "WEDDING", hints: ["Marriage ceremony", "Involves a white dress", "Exchanging rings", "Walking down the aisle", "Followed by a reception"] }
+            ],
+            sports: [
+                { word: "FOOTBALL", hints: ["Played with a round ball (mostly)", "11 players per team", "Scoring is called a goal", "Biggest tournament is the World Cup", "Also known as soccer"] },
+                { word: "MARATHON", hints: ["Long distance running", "26.2 miles", "Named after a Greek battle", "Requires intense endurance", "Starts with M"] },
+                { word: "BASEBALL", hints: ["America's pastime", "Played with a bat", "Pitcher and Catcher", "9 innings", "Home run!"] },
+                { word: "TENNIS", hints: ["Played with a racket", "Singles or doubles", "Wimbledon is a major tournament", "Scoring goes 15, 30, 40", "Love means zero"] },
+                { word: "SWIMMING", hints: ["Water sport", "Freestyle, butterfly, breaststroke", "Michael Phelps dominates this", "Done in a pool or ocean", "Requires a swimsuit"] },
+                { word: "CYCLING", hints: ["Riding a bicycle", "Tour de France", "Has a peloton", "Requires pedaling", "Two wheels"] },
+                { word: "BOXING", hints: ["Combat sport", "Wearing gloves", "Muhammad Ali", "Knockout (KO)", "Fought in a ring"] },
+                { word: "CRICKET", hints: ["Bat and ball game", "Popular in India and UK", "Bowler and Batsman", "Scoring runs", "Wickets are important"] },
+                { word: "REFEREE", hints: ["Official in sports", "Enforces the rules", "Often wears stripes", "Blows a whistle", "Hands out yellow and red cards"] },
+                { word: "STADIUM", hints: ["Large venue for sports", "Has bleachers or seats", "Where fans gather", "Colosseum was an ancient one", "Field in the middle"] }
+            ],
+            others: [
+                { word: "MYSTERY", hints: ["Something unexplained", "A secret", "Sherlock Holmes solves these", "Whodunit", "Starts with M"] },
+                { word: "JOURNEY", hints: ["Traveling from one place to another", "An adventure", "Not just about the destination", "A long trip", "Starts with J"] },
+                { word: "GUITAR", hints: ["Musical instrument", "Usually has 6 strings", "Acoustic or electric", "Strummed with a pick", "Fender and Gibson make these"] },
+                { word: "KITCHEN", hints: ["Room for cooking", "Contains a fridge and stove", "Where the chef works", "Heart of the home", "Smells like food"] },
+                { word: "CASTLE", hints: ["Fortified building", "Kings and queens live here", "Has a moat and drawbridge", "Medieval structure", "Chess piece (Rook)"] },
+                { word: "DIAMOND", hints: ["Precious gemstone", "Hardest natural substance", "Used in engagement rings", "Made of carbon", "Shines brightly"] },
+                { word: "HORIZON", hints: ["Where the earth meets the sky", "Looking off into the distance", "Sunsets happen here", "Appears flat but isn't", "Starts with H"] },
+                { word: "LANTERN", hints: ["Portable light source", "Often has a handle", "Can hold a candle or oil", "Carried in the dark", "Jack-o'-..."] },
+                { word: "PUZZLE", hints: ["A game that tests ingenuity", "Jigsaw is a popular type", "Requires putting pieces together", "Sudoku or Crossword", "Solves a problem"] },
+                { word: "THEATER", hints: ["Place for live performances", "Has a stage and curtains", "Broadway", "Actors perform here", "Where you watch plays"] }
+            ]
+        };
+
+        // State Variables
+        let currentCategoryList = [];
+        let currentWordObj, currentWord;
+        let guessedLetters = new Set();
+        let mistakes = 0;
+        const maxMistakes = 5;
+
+        // UI Elements
+        const catView = document.getElementById('category-view');
+        const gameView = document.getElementById('game-view');
+        const gameTitle = document.getElementById('game-title');
+        const displayEl = document.getElementById('word-display');
+        const keyboardEl = document.getElementById('keyboard');
+        const triesEl = document.getElementById('tries-count');
+        const messageBoard = document.getElementById('message-board');
+        const controlsEl = document.getElementById('game-over-controls');
+
+        // Initialize the virtual keyboard once
+        function buildKeyboard() {
+            keyboardEl.innerHTML = '';
+            for (let i = 65; i <= 90; i++) {
+                const letter = String.fromCharCode(i);
+                const btn = document.createElement('button');
+                btn.innerText = letter;
+                btn.className = 'key-btn';
+                btn.id = `key-${letter}`;
+                btn.onclick = () => handleGuess(letter);
+                keyboardEl.appendChild(btn);
+            }
+        }
+
+        function showCategories() {
+            gameView.style.display = 'none';
+            catView.style.display = 'block';
+        }
+
+        function startGame(category) {
+            currentCategoryList = wordBank[category];
+            const titles = {
+                coding: "💻 Coding Challenges",
+                nature: "🌲 Nature & Earth",
+                romance: "💖 Romantic Words",
+                sports: "⚽ Sports Trivia",
+                others: "🔮 Random Mystery"
+            };
+            gameTitle.innerText = titles[category];
+            
+            catView.style.display = 'none';
+            gameView.style.display = 'block';
+            
+            buildKeyboard();
+            initGame();
+        }
+
+        function initGame() {
+            // Select random word
+            currentWordObj = currentCategoryList[Math.floor(Math.random() * currentCategoryList.length)];
+            currentWord = currentWordObj.word.toUpperCase();
+            
+            // Reset state
+            guessedLetters.clear();
+            mistakes = 0;
+            
+            // Reset UI
+            triesEl.innerText = maxMistakes - mistakes;
+            messageBoard.innerHTML = `<span class="hint">Hint 1: ${currentWordObj.hints[0]}</span>`;
+            controlsEl.style.display = 'none';
+            
+            // Enable all keyboard buttons & remove color classes
+            document.querySelectorAll('.key-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('correct', 'wrong');
+            });
+
+            updateWordDisplay();
+        }
+
+        function updateWordDisplay() {
+            displayEl.innerHTML = '';
+            for (let i = 0; i < currentWord.length; i++) {
+                const letter = currentWord[i];
+                const box = document.createElement('div');
+                box.className = 'letter-box';
+                // Show the letter if it's been guessed, otherwise leave blank
+                box.innerText = guessedLetters.has(letter) ? letter : '';
+                displayEl.appendChild(box);
+            }
+        }
+
+        function handleGuess(letter) {
+            // Ignore if game over or already guessed
+            if (mistakes >= maxMistakes || guessedLetters.has(letter)) return;
+
+            guessedLetters.add(letter);
+            const keyBtn = document.getElementById(`key-${letter}`);
+            keyBtn.disabled = true; // Disable the button
+
+            if (currentWord.includes(letter)) {
+                // Correct Guess
+                keyBtn.classList.add('correct');
+                updateWordDisplay();
+                checkWin();
+            } else {
+                // Wrong Guess
+                keyBtn.classList.add('wrong');
+                mistakes++;
+                triesEl.innerText = maxMistakes - mistakes;
+                
+                if (mistakes >= maxMistakes) {
+                    // Lose Condition
+                    showGameOver(false);
+                } else {
+                    // Progress Hint
+                    messageBoard.innerHTML = `<span class="error">Wrong!</span> <br><span class="hint">Hint ${mistakes + 1}: ${currentWordObj.hints[mistakes]}</span>`;
+                }
+            }
+        }
+
+        function checkWin() {
+            // Check if every letter in the current word has been guessed
+            const hasWon = currentWord.split('').every(letter => guessedLetters.has(letter));
+            if (hasWon) {
+                showGameOver(true);
+            }
+        }
+
+        function showGameOver(isWin) {
+            // Disable remaining keyboard buttons
+            document.querySelectorAll('.key-btn').forEach(btn => btn.disabled = true);
+            controlsEl.style.display = 'flex';
+            controlsEl.style.justifyContent = 'space-between';
+
+            if (isWin) {
+                messageBoard.innerHTML = `<span class="success">Brilliant! You guessed it! 🎉</span>`;
+            } else {
+                // Fill in the missing letters in red so they see what they missed
+                displayEl.innerHTML = '';
+                for (let i = 0; i < currentWord.length; i++) {
+                    const letter = currentWord[i];
+                    const box = document.createElement('div');
+                    box.className = 'letter-box';
+                    if (guessedLetters.has(letter)) {
+                        box.innerText = letter;
+                    } else {
+                        box.innerText = letter;
+                        box.style.color = '#ef4444'; // Red for missed letters
+                    }
+                    displayEl.appendChild(box);
+                }
+                messageBoard.innerHTML = `<span class="error">Game Over! You ran out of tries.</span>`;
+            }
+        }
+
+        // Allow physical keyboard typing
+        document.addEventListener('keydown', (e) => {
+            // Only accept input if the game view is active and game is not over
+            if (gameView.style.display === 'block' && mistakes < maxMistakes) {
+                const char = e.key.toUpperCase();
+                // Check if the pressed key is a letter A-Z
+                if (/^[A-Z]$/.test(char)) {
+                    handleGuess(char);
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

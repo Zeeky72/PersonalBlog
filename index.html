@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prayash Poudel | Backend Developer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+
+    <section class="container">
+        <h1>Hi, I'm <span class="accent-text">Prayash Poudel</span></h1>
+        <p style="font-size: 1.2rem; color: var(--text-secondary);">
+            BCA Student & Backend Developer based in <strong>Electronic City, Bengaluru</strong>.
+        </p>
+        <p style="margin-top: 1rem;">
+            I specialize in building robust server-side architectures, primarily working with 
+            <strong>.NET Core</strong> and <strong>C#</strong>. I love solving complex 
+            logic problems and building scalable web services.
+        </p>
+        
+        <div style="margin-top: 2rem;">
+            <a href="projects.html" class="btn">View My Work</a>
+        </div>
+    </section>
+
+    <footer class="container" style="text-align: center; margin-top: 5rem;">
+        <button id="surprise-btn">.</button>
+    </footer>
+
+    <script src="nav.js"></script>
+    <script>
+        document.getElementById('surprise-btn').addEventListener('click', () => {
+            const code = prompt("Enter the secret access code:");
+            if (code === "772277") {
+                document.body.style.transition = "background 0.5s";
+                document.body.style.background = "#ff1493";
+                
+                const msg = document.createElement('div');
+                msg.style = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); font-size:4rem; font-weight:bold; color:white; z-index:10000; text-align:center; text-shadow: 2px 2px 10px rgba(0,0,0,0.5);";
+                msg.innerHTML = "💖 I love you Simi 💖";
+                document.body.appendChild(msg);
+
+                // Simple "vibrant animation" effect
+                setInterval(() => {
+                    msg.style.transform = `translate(-50%, -50%) scale(${1 + Math.random() * 0.1})`;
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

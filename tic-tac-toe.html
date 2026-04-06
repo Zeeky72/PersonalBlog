@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoro vs Mihawk | Arcade</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2rem;
+            position: relative;
+        }
+
+        /* The Scoreboard & Turn Indicator */
+        .duel-board {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 2rem;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .fighter {
+            text-align: center;
+            transition: all 0.3s;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            opacity: 0.5;
+        }
+
+        .fighter h3 { margin-bottom: 0.2rem; font-size: 1.1rem; }
+        .fighter span { font-size: 1.5rem; font-weight: bold; }
+
+        /* Active Turn Glows */
+        .fighter.active.zoro-turn {
+            opacity: 1;
+            background: rgba(34, 197, 94, 0.1);
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+            border: 1px solid #22c55e;
+        }
+        
+        .fighter.active.mihawk-turn {
+            opacity: 1;
+            background: rgba(239, 68, 68, 0.1);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+            border: 1px solid #ef4444;
+        }
+
+        .zoro-text { color: #22c55e; text-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
+        .mihawk-text { color: #ef4444; text-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+
+        /* The Game Board */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            background: #1e293b;
+            padding: 12px;
+            border-radius: 16px;
+            border: 2px solid #334155;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .cell:hover:not(.taken) {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .cell.taken { cursor: default; }
+
+        /* Strike Animations */
+        @keyframes strikeIn {
+            0% { transform: scale(3) rotate(-45deg); opacity: 0; }
+            50% { transform: scale(0.8) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .cell.zoro-strike {
+            animation: strikeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            color: #22c55e;
+            text-shadow: 0 0 20px #22c55e, 0 0 40px #22c55e;
+        }
+
+        .cell.mihawk-strike {
+            animation: strikeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            color: #ef4444;
+            text-shadow: 0 0 20px #ef4444, 0 0 40px #ef4444;
+        }
+
+        /* Winning Pulse Effect */
+        @keyframes winPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,255,255,0); }
+            50% { transform: scale(1.1); box-shadow: 0 0 30px currentColor; background: rgba(255,255,255,0.1); }
+            100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,255,255,0); }
+        }
+
+        .cell.winning-cell {
+            animation: winPulse 1.5s infinite;
+            border-color: currentColor;
+            z-index: 10;
+        }
+
+        /* Overlay */
+        .game-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 16px;
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 110%;
+            z-index: 20;
+        }
+
+        .game-overlay.zoro-wins { border: 2px solid #22c55e; box-shadow: 0 0 40px rgba(34, 197, 94, 0.4); }
+        .game-overlay.mihawk-wins { border: 2px solid #ef4444; box-shadow: 0 0 40px rgba(239, 68, 68, 0.4); }
+        .game-overlay.draw { border: 2px solid #94a3b8; box-shadow: 0 0 40px rgba(148, 163, 184, 0.4); }
+
+    </style>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+
+    <div class="container" style="padding-top: 2rem; padding-bottom: 0;">
+        <a href="arcade.html" class="btn" style="background: transparent; border: 1px solid var(--accent); color: var(--accent);">← Back to Arcade</a>
+    </div>
+
+    <div class="game-wrapper container">
+        
+        <div class="duel-board">
+            <div id="zoro-profile" class="fighter active zoro-turn">
+                <h3 class="zoro-text">ZORO</h3>
+                <span id="score-zoro" class="zoro-text">0</span>
+            </div>
+            <div style="color: var(--text-secondary); font-weight: bold; font-size: 1.5rem;">VS</div>
+            <div id="mihawk-profile" class="fighter">
+                <h3 class="mihawk-text">MIHAWK</h3>
+                <span id="score-mihawk" class="mihawk-text">0</span>
+            </div>
+        </div>
+
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+
+            <div id="game-over" class="game-overlay">
+                <h2 id="winner-text" style="font-size: 2.5rem; margin-bottom: 0.5rem;">Winner!</h2>
+                <p id="winner-subtext" style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem;">A flawless victory.</p>
+                <button class="btn" onclick="resetBoard()" style="font-size: 1.1rem; padding: 1rem 2rem;">Rematch</button>
+            </div>
+        </div>
+        
+    </div>
+
+    <script src="nav.js"></script>
+
+    <script>
+        // Game State
+        let boardState = ["", "", "", "", "", "", "", "", ""];
+        let gameActive = true;
+        let currentPlayer = "Zoro"; // Zoro goes first
+        let scores = { Zoro: 0, Mihawk: 0 };
+
+        // Constants
+        const ZORO_SYMBOL = "⚔️";
+        const MIHAWK_SYMBOL = "🗡️";
+
+        // Winning Combinations
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Cols
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        // UI Elements
+        const cells = document.querySelectorAll('.cell');
+        const zoroProfile = document.getElementById('zoro-profile');
+        const mihawkProfile = document.getElementById('mihawk-profile');
+        const scoreZoroEl = document.getElementById('score-zoro');
+        const scoreMihawkEl = document.getElementById('score-mihawk');
+        const gameOverScreen = document.getElementById('game-over');
+        const winnerText = document.getElementById('winner-text');
+        const winnerSubtext = document.getElementById('winner-subtext');
+
+        // Handle Click
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => handleCellClick(cell));
+        });
+
+        function handleCellClick(cell) {
+            const index = cell.getAttribute('data-index');
+
+            if (boardState[index] !== "" || !gameActive) return;
+
+            // Update State
+            boardState[index] = currentPlayer;
+            cell.classList.add('taken');
+            
+            // Apply Visuals
+            if (currentPlayer === "Zoro") {
+                cell.innerText = ZORO_SYMBOL;
+                cell.classList.add('zoro-strike');
+            } else {
+                cell.innerText = MIHAWK_SYMBOL;
+                cell.classList.add('mihawk-strike');
+            }
+
+            checkWin();
+        }
+
+        function checkWin() {
+            let roundWon = false;
+            let winningCells = [];
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                let a = boardState[winCondition[0]];
+                let b = boardState[winCondition[1]];
+                let c = boardState[winCondition[2]];
+
+                if (a === "" || b === "" || c === "") continue;
+
+                if (a === b && b === c) {
+                    roundWon = true;
+                    winningCells = winCondition;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                gameActive = false;
+                
+                // Highlight winning cells
+                winningCells.forEach(index => {
+                    cells[index].classList.add('winning-cell');
+                });
+
+                // Small delay so the player can see the final strike before the overlay appears
+                setTimeout(() => {
+                    triggerGameOver(currentPlayer);
+                }, 800);
+                return;
+            }
+
+            // Check Draw
+            let roundDraw = !boardState.includes("");
+            if (roundDraw) {
+                gameActive = false;
+                setTimeout(() => { triggerGameOver("Draw"); }, 500);
+                return;
+            }
+
+            // Switch Turn if game continues
+            switchPlayer();
+        }
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === "Zoro" ? "Mihawk" : "Zoro";
+            
+            // Update UI Glows
+            if (currentPlayer === "Zoro") {
+                zoroProfile.classList.add('active', 'zoro-turn');
+                mihawkProfile.classList.remove('active', 'mihawk-turn');
+            } else {
+                mihawkProfile.classList.add('active', 'mihawk-turn');
+                zoroProfile.classList.remove('active', 'zoro-turn');
+            }
+        }
+
+        function triggerGameOver(winner) {
+            gameOverScreen.style.display = "flex";
+            
+            // Clean up previous overlay classes
+            gameOverScreen.className = "game-overlay"; 
+
+            if (winner === "Zoro") {
+                scores.Zoro++;
+                scoreZoroEl.innerText = scores.Zoro;
+                winnerText.innerText = "ZORO WINS";
+                winnerText.className = "zoro-text";
+                winnerSubtext.innerText = "Three-Sword Style strikes again.";
+                gameOverScreen.classList.add('zoro-wins');
+            } 
+            else if (winner === "Mihawk") {
+                scores.Mihawk++;
+                scoreMihawkEl.innerText = scores.Mihawk;
+                winnerText.innerText = "MIHAWK WINS";
+                winnerText.className = "mihawk-text";
+                winnerSubtext.innerText = "The World's Strongest Swordsman.";
+                gameOverScreen.classList.add('mihawk-wins');
+            } 
+            else {
+                winnerText.innerText = "DRAW";
+                winnerText.className = "";
+                winnerText.style.color = "white";
+                winnerSubtext.innerText = "Their blades are equally matched.";
+                gameOverScreen.classList.add('draw');
+            }
+        }
+
+        function resetBoard() {
+            boardState = ["", "", "", "", "", "", "", "", ""];
+            gameActive = true;
+            gameOverScreen.style.display = "none";
+            
+            cells.forEach(cell => {
+                cell.innerText = "";
+                cell.className = "cell"; // Resets all classes
+            });
+
+            // Winner goes first next round (or keep current turn if draw)
+            if (currentPlayer === "Zoro") {
+                zoroProfile.classList.add('active', 'zoro-turn');
+                mihawkProfile.classList.remove('active', 'mihawk-turn');
+            } else {
+                mihawkProfile.classList.add('active', 'mihawk-turn');
+                zoroProfile.classList.remove('active', 'zoro-turn');
+            }
+        }
+    </script>
+</body>
+</html>
