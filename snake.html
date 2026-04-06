@@ -11,10 +11,11 @@
             flex-direction: column;
             align-items: center;
             margin-top: 2rem;
+            user-select: none; /* Prevents text selection while tapping fast */
         }
         
         canvas {
-            background-color: #0f172a; /* Matches your portfolio background */
+            background-color: #0f172a; 
             border: 2px solid #334155;
             border-radius: 12px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.5);
@@ -38,7 +39,7 @@
         }
 
         .controls-hint { 
-            margin-top: 1.5rem; 
+            margin-top: 1rem; 
             color: var(--text-secondary); 
             font-size: 0.95rem; 
             text-align: center;
@@ -59,10 +60,72 @@
             flex-direction: column;
             align-items: center;
             box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+            width: 80%;
         }
         
         .game-area {
             position: relative;
+        }
+
+        /* Mobile D-Pad Controls */
+        .mobile-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Hide class used by the JS toggle */
+        .mobile-controls.hidden {
+            display: none !important;
+        }
+
+        .horizontal-btns {
+            display: flex;
+            gap: 4rem; /* Creates space for the up/down buttons */
+        }
+
+        .dir-btn {
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid var(--accent);
+            color: white;
+            font-size: 1.8rem;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            -webkit-tap-highlight-color: transparent; /* Removes blue tap highlight on mobile */
+            transition: transform 0.1s, background 0.1s;
+        }
+
+        .dir-btn:active {
+            background: var(--accent);
+            transform: scale(0.9);
+        }
+
+        /* Toggle Button Styling */
+        #toggle-controls-btn {
+            background: transparent;
+            border: 1px solid var(--text-secondary);
+            color: var(--text-secondary);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        #toggle-controls-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(56, 189, 248, 0.1);
         }
     </style>
 </head>
@@ -89,9 +152,20 @@
                 <button id="restart-btn" class="btn">Play Again</button>
             </div>
         </div>
+
+        <button id="toggle-controls-btn">Show On-Screen Controls</button>
+
+        <div id="mobile-controls" class="mobile-controls">
+            <button class="dir-btn" id="btn-up">⬆️</button>
+            <div class="horizontal-btns">
+                <button class="dir-btn" id="btn-left">⬅️</button>
+                <button class="dir-btn" id="btn-right">➡️</button>
+            </div>
+            <button class="dir-btn" id="btn-down">⬇️</button>
+        </div>
         
         <p class="controls-hint">
-            <strong>Controls:</strong> Arrow Keys to move.<br>
+            <strong>Controls:</strong> Arrow Keys or On-Screen buttons to move.<br>
             <em>Pro tip: You can pass through walls! Don't bite yourself.</em>
         </p>
     </div>
@@ -105,6 +179,31 @@
         const highScoreEl = document.getElementById("high-score");
         const gameOverScreen = document.getElementById("game-over");
         const restartBtn = document.getElementById("restart-btn");
+        
+        // UI Controls logic
+        const toggleControlsBtn = document.getElementById("toggle-controls-btn");
+        const mobileControls = document.getElementById("mobile-controls");
+
+        // Set initial visibility based on screen width
+        if (window.innerWidth >= 768) {
+            mobileControls.classList.add("hidden");
+            toggleControlsBtn.innerText = "Show On-Screen Controls";
+        } else {
+            mobileControls.classList.remove("hidden");
+            toggleControlsBtn.innerText = "Hide On-Screen Controls";
+        }
+
+        // Handle Toggle Click
+        toggleControlsBtn.addEventListener("click", () => {
+            mobileControls.classList.toggle("hidden");
+            if (mobileControls.classList.contains("hidden")) {
+                toggleControlsBtn.innerText = "Show On-Screen Controls";
+            } else {
+                toggleControlsBtn.innerText = "Hide On-Screen Controls";
+            }
+        });
+
+        // --- GAME LOGIC ---
 
         const gridSize = 20;
         let snake, food, dx, dy, score, baseSpeed, gameLoopTimeout;
@@ -115,7 +214,6 @@
         highScoreEl.innerText = highScore;
 
         function initGame() {
-            // Start snake in the middle
             snake = [
                 { x: 200, y: 200 },
                 { x: 180, y: 200 },
@@ -123,9 +221,9 @@
             ];
             
             score = 0;
-            dx = gridSize; // Start moving right
+            dx = gridSize; 
             dy = 0;
-            baseSpeed = 160; // Initial slower speed in ms
+            baseSpeed = 160; 
             
             scoreEl.innerText = score;
             gameOverScreen.style.display = "none";
@@ -143,7 +241,6 @@
 
             changingDirection = false;
 
-            // Speed up calculation: subtract 3ms per apple, but never go faster than 60ms
             let currentSpeed = Math.max(60, baseSpeed - (score * 3));
             
             gameLoopTimeout = setTimeout(function onTick() {
@@ -162,19 +259,12 @@
 
         function drawSnake() {
             snake.forEach((part, index) => {
-                // Vibrant Gradient Logic using HSL colors
-                // Base hue is 190 (Cyan), and shifts towards Purple/Pink as the index increases
                 const hue = (190 + (index * 8)) % 360; 
-                
                 if (index === 0) {
-                    // Head of the snake
                     ctx.fillStyle = `hsl(${hue}, 100%, 70%)`;
                 } else {
-                    // Body of the snake
                     ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
                 }
-                
-                // Draw a slightly smaller rect to create a "segmented" look
                 ctx.fillRect(part.x + 1, part.y + 1, gridSize - 2, gridSize - 2);
             });
         }
@@ -182,42 +272,31 @@
         function advanceSnake() {
             const head = { x: snake[0].x + dx, y: snake[0].y + dy };
 
-            // --- WALL WRAPPING LOGIC ---
-            if (head.x < 0) {
-                head.x = canvas.width - gridSize;
-            } else if (head.x >= canvas.width) {
-                head.x = 0;
-            }
+            // Wall wrapping
+            if (head.x < 0) head.x = canvas.width - gridSize;
+            else if (head.x >= canvas.width) head.x = 0;
             
-            if (head.y < 0) {
-                head.y = canvas.height - gridSize;
-            } else if (head.y >= canvas.height) {
-                head.y = 0;
-            }
+            if (head.y < 0) head.y = canvas.height - gridSize;
+            else if (head.y >= canvas.height) head.y = 0;
 
             snake.unshift(head);
 
-            // Did the snake eat the apple?
             if (head.x === food.x && head.y === food.y) {
                 score += 1;
                 scoreEl.innerText = score;
                 
-                // Update High Score
                 if(score > highScore) {
                     highScore = score;
                     localStorage.setItem("snakeHighScore", highScore);
                     highScoreEl.innerText = highScore;
                 }
-                
                 spawnFood();
             } else {
-                // If it didn't eat, remove the tail so it moves forward
                 snake.pop();
             }
         }
 
         function drawFood() {
-            // Draw an apple emoji!
             ctx.font = `${gridSize - 2}px Arial`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
@@ -225,7 +304,6 @@
         }
 
         function spawnFood() {
-            // Ensure food doesn't spawn ON the snake
             let isOccupied = true;
             while(isOccupied) {
                 food = {
@@ -244,28 +322,14 @@
         }
 
         function hasGameEnded() {
-            // Self-Collision Check: Only check from index 4 onwards 
-            // (impossible to hit parts 1, 2, or 3 of your own body)
             for (let i = 4; i < snake.length; i++) {
-                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) {
-                    return true;
-                }
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
             }
             return false;
         }
 
-        // --- CONTROLS ---
-        document.addEventListener("keydown", changeDirection);
-
-        function changeDirection(event) {
-            const LEFT_KEY = 37, RIGHT_KEY = 39, UP_KEY = 38, DOWN_KEY = 40;
-            const keyPressed = event.keyCode;
-            
-            // Prevent default browser scrolling when playing
-            if([37, 38, 39, 40].includes(keyPressed)) {
-                event.preventDefault();
-            }
-
+        // --- CORE DIRECTION LOGIC ---
+        function setDirection(dir) {
             if (changingDirection) return;
 
             const goingUp = dy === -gridSize;
@@ -273,18 +337,47 @@
             const goingRight = dx === gridSize;
             const goingLeft = dx === -gridSize;
 
-            if (keyPressed === LEFT_KEY && !goingRight) {
-                dx = -gridSize; dy = 0; changingDirection = true;
+            if (dir === 'LEFT' && !goingRight) { dx = -gridSize; dy = 0; changingDirection = true; }
+            if (dir === 'UP' && !goingDown) { dx = 0; dy = -gridSize; changingDirection = true; }
+            if (dir === 'RIGHT' && !goingLeft) { dx = gridSize; dy = 0; changingDirection = true; }
+            if (dir === 'DOWN' && !goingUp) { dx = 0; dy = gridSize; changingDirection = true; }
+        }
+
+        // Keyboard Event Listener
+        document.addEventListener("keydown", (event) => {
+            const LEFT_KEY = 37, RIGHT_KEY = 39, UP_KEY = 38, DOWN_KEY = 40;
+            const keyPressed = event.keyCode;
+            
+            if([37, 38, 39, 40].includes(keyPressed)) {
+                event.preventDefault();
             }
-            if (keyPressed === UP_KEY && !goingDown) {
-                dx = 0; dy = -gridSize; changingDirection = true;
-            }
-            if (keyPressed === RIGHT_KEY && !goingLeft) {
-                dx = gridSize; dy = 0; changingDirection = true;
-            }
-            if (keyPressed === DOWN_KEY && !goingUp) {
-                dx = 0; dy = gridSize; changingDirection = true;
-            }
+
+            if (keyPressed === LEFT_KEY) setDirection('LEFT');
+            if (keyPressed === UP_KEY) setDirection('UP');
+            if (keyPressed === RIGHT_KEY) setDirection('RIGHT');
+            if (keyPressed === DOWN_KEY) setDirection('DOWN');
+        });
+
+        // Mobile Button Event Listeners
+        const btnMap = {
+            'btn-up': 'UP',
+            'btn-down': 'DOWN',
+            'btn-left': 'LEFT',
+            'btn-right': 'RIGHT'
+        };
+
+        for (const [id, dir] of Object.entries(btnMap)) {
+            const btn = document.getElementById(id);
+            // Touch trigger
+            btn.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                setDirection(dir); 
+            });
+            // Mouse trigger (for testing on desktop)
+            btn.addEventListener('mousedown', (e) => { 
+                e.preventDefault(); 
+                setDirection(dir); 
+            });
         }
 
         restartBtn.addEventListener("click", initGame);

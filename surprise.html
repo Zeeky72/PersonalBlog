@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>For Simi 🌸</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <style>
         /* Romantic Animated Background */
         body {
@@ -39,7 +41,7 @@
             width: 90%;
             max-width: 400px;
             position: relative;
-            z-index: 10; /* Keeps the card ON TOP of the floating emojis */
+            z-index: 10;
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -109,7 +111,7 @@
         .floating-item {
             position: absolute;
             pointer-events: none;
-            z-index: 1; /* Puts them behind the glass card */
+            z-index: 1; 
         }
 
         .floating-msg {
@@ -120,14 +122,13 @@
             font-weight: bold;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             animation: floatMessage 3s ease-out forwards;
-            z-index: 20; /* Keep the error messages in front so they can be read */
+            z-index: 20; 
         }
 
         .floating-emoji {
             animation: floatEmoji 5s linear forwards;
         }
 
-        /* Screen-wide Emoji Float */
         @keyframes floatEmoji {
             0% { transform: translateY(0) translateX(0) scale(0.5) rotate(0deg); opacity: 0; }
             10% { opacity: 1; }
@@ -136,14 +137,12 @@
             100% { transform: translateY(-110vh) translateX(-30px) scale(1.5) rotate(360deg); opacity: 0; }
         }
 
-        /* Error Text Float */
         @keyframes floatMessage {
             0% { transform: translateY(0) scale(0.5); opacity: 0; }
             20% { opacity: 1; transform: translateY(-20px) scale(1.1); }
             100% { transform: translateY(-200px) scale(1); opacity: 0; }
         }
 
-        /* Error Shake Animation */
         @keyframes gentleShake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px) rotate(-2deg); }
@@ -151,38 +150,50 @@
         }
         .shake { animation: gentleShake 0.4s ease-in-out; }
 
-        /* Full Screen Success View */
+        /* Full Screen Success View with Story Progression */
         .success-screen {
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            animation: fadeIn 1s ease-in;
             z-index: 30;
+            width: 100%;
         }
 
-        .love-title {
-            font-size: 4rem;
-            font-weight: 800;
-            color: white;
-            text-shadow: 0 0 20px #ff1493, 0 0 40px #ff69b4;
-            margin-bottom: 1rem;
-        }
-
-        .love-paragraph {
-            background: rgba(255,255,255,0.2);
-            padding: 2rem;
-            border-radius: 20px;
-            max-width: 600px;
+        .story-text {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            max-width: 800px;
+            padding: 0 20px;
+            /* Beautiful vibrant text gradient */
+            background: linear-gradient(to right, #ff1493, #ff4500, #ff1493);
+            background-size: 200% auto;
             color: #fff;
-            font-size: 1.2rem;
-            line-height: 1.6;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-            backdrop-filter: blur(10px);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+            /* Soft glow behind text */
+            filter: drop-shadow(0px 2px 10px rgba(255, 105, 180, 0.4));
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        /* Animation for when a new message appears */
+        .slide-up-fade {
+            animation: slideUpFade 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(30px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
     </style>
 </head>
 <body>
@@ -204,11 +215,12 @@
         </div>
 
         <div id="success-view" class="success-screen">
-            <div class="love-title">I love you Simi 💖</div>
-            <div class="love-paragraph">
-                You cracked the code! Thank you for being the most amazing person in my life. Every day with you feels like winning the ultimate prize. You are my greatest motivation and my favorite secret. 🌸✨
+            <div id="story-container" class="story-text slide-up-fade">
+                You cracked the code! 💖
             </div>
-            <a href="arcade.html" class="cute-btn" style="margin-top: 2rem; width: auto;">Keep exploring my portfolio 🥺</a>
+            
+            <button id="next-msg-btn" class="cute-btn" style="width: auto; min-width: 150px; font-size: 1.2rem;">Next ✨</button>
+            <a href="arcade.html" id="final-btn" class="cute-btn" style="width: auto; display: none; text-decoration: none;">Keep exploring my portfolio 🥺</a>
         </div>
     </div>
 
@@ -222,22 +234,38 @@
             const counterText = document.getElementById('counter-text');
             const hintText = document.getElementById('hint-text');
 
+            // Success Story Progression Elements
+            const storyContainer = document.getElementById('story-container');
+            const nextMsgBtn = document.getElementById('next-msg-btn');
+            const finalBtn = document.getElementById('final-btn');
+
             let attempts = 0;
-            const correctCode = "772277";
+            const correctCode = "simi72";
 
             // Cute error messages and emojis
             const wrongMessages = ["Oops! Try again sweetie 🥺", "Not quite right! 💔", "Are you guessing? 🤨", "Hmm... nope! 🌸", "Close, but no cigar! ✨"];
             const wrongEmojis = ["❌", "🥺", "💔", "🥀", "😅", "☁️", "💧"];
             const rightEmojis = ["❤️", "💖", "✨", "🌸", "🥰", "🎉", "🦋"];
 
-            // Hint progression
+            // Updated Hints for "simi72"
             const hints = [
-                "Hint: It's a 6-digit number...",
-                "Hint: It starts with double sevens...",
-                "Hint: The middle two digits are 22...",
-                "Hint: It ends the way it started...",
-                "Okay, just type 772277 silly! 🤦‍♂️"
+                "Hint: It's a mix of letters and numbers...",
+                "Hint: It starts with your beautiful name...",
+                "Hint: Make sure it's all lowercase...",
+                "Hint: It ends with the numbers 7 and 2...",
+                "Okay, just type simi72 silly! 🤦‍♂️"
             ];
+
+            // The romantic story messages array
+            const loveStory = [
+                "You cracked the code! 💖",
+                "I just wanted to take a little moment to say...",
+                "You are the most amazing person in my life. ✨",
+                "Every single day with you feels like winning the ultimate prize.",
+                "You are my greatest motivation and my favorite secret. 🌸",
+                "I love you, Simi. Forever and always. ❤️"
+            ];
+            let currentStoryIndex = 0;
 
             inputField.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') checkPasscode();
@@ -246,7 +274,9 @@
             submitBtn.addEventListener('click', checkPasscode);
 
             function checkPasscode() {
-                const code = inputField.value;
+                // .trim() removes spaces, .toLowerCase() makes it case insensitive!
+                const code = inputField.value.trim().toLowerCase(); 
+                
                 if (code === correctCode) {
                     triggerSuccess();
                 } else {
@@ -283,24 +313,46 @@
                 successView.style.display = 'flex';
                 
                 // Make the box expand and become totally transparent
-                authBox.style.maxWidth = "800px";
+                authBox.style.maxWidth = "900px";
                 authBox.style.background = "transparent";
                 authBox.style.border = "none";
                 authBox.style.boxShadow = "none";
                 authBox.style.backdropFilter = "none";
 
+                // Set initial story message
+                storyContainer.innerHTML = loveStory[currentStoryIndex];
+
                 // Generate hearts across the whole screen continuously
                 setInterval(() => spawnFloatingEmoji(rightEmojis[Math.floor(Math.random() * rightEmojis.length)]), 100);
             }
+
+            // Next Button Logic
+            nextMsgBtn.addEventListener('click', () => {
+                currentStoryIndex++;
+                
+                // Re-trigger the CSS animation so it slides up and fades in again
+                storyContainer.classList.remove('slide-up-fade');
+                void storyContainer.offsetWidth; // Trigger reflow to restart animation
+                storyContainer.classList.add('slide-up-fade');
+
+                if (currentStoryIndex < loveStory.length) {
+                    storyContainer.innerHTML = loveStory[currentStoryIndex];
+                } 
+                
+                // If it's the last message, swap the buttons
+                if (currentStoryIndex === loveStory.length - 1) {
+                    nextMsgBtn.style.display = 'none';
+                    finalBtn.style.display = 'inline-block';
+                }
+            });
 
             function spawnFloatingMessage(text) {
                 const el = document.createElement('div');
                 el.classList.add('floating-item', 'floating-msg');
                 el.innerText = text;
                 
-                // Center the message above the input box
-                const startX = (window.innerWidth / 2) - 100; // Roughly centered
-                const startY = (window.innerHeight / 2) - 150; // Above the box
+                const startX = (window.innerWidth / 2) - 100; 
+                const startY = (window.innerHeight / 2) - 150; 
                 
                 el.style.left = `${startX}px`;
                 el.style.top = `${startY}px`;
@@ -314,23 +366,16 @@
                 el.classList.add('floating-item', 'floating-emoji');
                 el.innerText = emoji;
                 
-                // Spawn anywhere randomly across the ENTIRE width of the screen
                 const startX = Math.random() * window.innerWidth;
-                
-                // Spawn from below the visible screen so they rise up organically
                 const startY = window.innerHeight + 50; 
                 
                 el.style.left = `${startX}px`;
                 el.style.top = `${startY}px`;
-                
-                // Randomize sizes
                 el.style.fontSize = `${Math.random() * 2 + 1.5}rem`;
-                
-                // Randomize animation speed slightly so they don't all move identically
                 el.style.animationDuration = `${Math.random() * 3 + 4}s`;
 
                 document.body.appendChild(el);
-                setTimeout(() => el.remove(), 6000); // Wait long enough for them to leave the screen
+                setTimeout(() => el.remove(), 6000); 
             }
         });
     </script>

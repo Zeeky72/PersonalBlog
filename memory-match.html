@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match | Arcade</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2rem;
+            position: relative;
+        }
+
+        /* Controls & Scoreboard */
+        .controls-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .difficulty-btn {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155;
+            color: var(--text-primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: bold;
+        }
+
+        .difficulty-btn:hover {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .difficulty-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .score-box { 
+            background: var(--card-bg); 
+            padding: 0.75rem 2rem; 
+            border-radius: 8px; 
+            border: 1px solid #334155; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-align: center;
+            min-width: 140px;
+        }
+
+        /* The Grid */
+        .memory-board {
+            display: grid;
+            gap: 12px;
+            background: #1e293b;
+            padding: 24px;
+            border-radius: 16px;
+            border: 2px solid #334155;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* Simplified Card Design */
+        .card {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* Forces a perfect square */
+            background: linear-gradient(135deg, #38bdf8, #0284c7); /* Closed state background */
+            border: 2px solid #bae6fd;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+            user-select: none;
+        }
+
+        /* Subtle hover lift for unopened cards */
+        .card:hover:not(.revealed):not(.matched) {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Open State */
+        .card.revealed, .card.matched {
+            background: #0f172a;
+            border-color: var(--accent);
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Solved State (Keeps emoji visible but dims card slightly) */
+        .card.matched {
+            opacity: 0.5; 
+            cursor: default;
+        }
+
+        /* The Emoji Text */
+        .emoji-icon {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            line-height: 1;
+            opacity: 0; /* Hidden by default */
+            transform: scale(0.5);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy pop-in */
+        }
+
+        /* Reveal Emoji */
+        .card.revealed .emoji-icon, .card.matched .emoji-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Overlay */
+        .game-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 16px;
+            border: 1px solid var(--accent);
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+            z-index: 10;
+            width: 90%;
+            max-width: 450px;
+        }
+    </style>
+</head>
+<body>
+    <div id="nav-placeholder"></div>
+
+    <div class="container" style="padding-top: 2rem; padding-bottom: 0;">
+        <a href="arcade.html" class="btn" style="background: transparent; border: 1px solid var(--accent); color: var(--accent);">← Back to Arcade</a>
+    </div>
+
+    <div class="game-wrapper container">
+        
+        <div class="controls-bar">
+            <button class="difficulty-btn active" data-cols="4" data-rows="4">Easy (4x4)</button>
+            <button class="difficulty-btn" data-cols="5" data-rows="4">Medium (5x4)</button>
+            <button class="difficulty-btn" data-cols="6" data-rows="6">Hard (6x6)</button>
+            <button class="difficulty-btn" data-cols="8" data-rows="6">Very Hard (8x6)</button>
+        </div>
+
+        <div class="scoreboard">
+            <div class="score-box">Moves: <br><span id="moves" class="accent-text" style="font-size: 1.8rem;">0</span></div>
+            <div class="score-box">Time: <br><span id="time" class="accent-text" style="font-size: 1.8rem;">0:00</span></div>
+        </div>
+
+        <div class="memory-board" id="game-board">
+            </div>
+        
+        <div id="game-over" class="game-overlay">
+            <h2 style="margin-bottom: 0.5rem; font-size: 2.5rem; color: #fff;">Victory! 🎉</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">You cleared the board.</p>
+            
+            <div style="display: flex; gap: 2rem; margin-bottom: 2rem;">
+                <div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);">Final Moves</div>
+                    <div id="final-moves" class="accent-text" style="font-size: 2rem; font-weight: bold;">0</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);">Final Time</div>
+                    <div id="final-time" class="accent-text" style="font-size: 2rem; font-weight: bold;">0:00</div>
+                </div>
+            </div>
+            
+            <button id="restart-btn" class="btn" style="width: 100%;">Play Again</button>
+        </div>
+        
+    </div>
+
+    <script src="nav.js"></script>
+
+    <script>
+        // Massive Emoji Dictionary 
+        const emojiDictionary = [
+            '🚀', '🎸', '🎮', '🍔', '🍕', '🦄', '🐶', '🐱', 
+            '🐸', '🍩', '🍦', '🎈', '🎁', '💎', '💡', '💣', 
+            '🧸', '🍀', '🌻', '🍎', '⚽', '🎨', '🌈', '🔥',
+            '⚡', '🧠', '👑', '🦋', '🍉', '👻', '🤖', '👾'
+        ];
+
+        const board = document.getElementById('game-board');
+        const movesEl = document.getElementById('moves');
+        const timeEl = document.getElementById('time');
+        const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalMovesEl = document.getElementById('final-moves');
+        const finalTimeEl = document.getElementById('final-time');
+        const restartBtn = document.getElementById('restart-btn');
+
+        let hasFlippedCard = false;
+        let lockBoard = false;
+        let firstCard, secondCard;
+        
+        let moves = 0;
+        let matches = 0;
+        let totalPairs = 0;
+        
+        // Timer vars
+        let timeSeconds = 0;
+        let timerInterval;
+        let timerStarted = false;
+
+        // Default Configuration
+        let currentCols = 4;
+        let currentRows = 4;
+
+        function startTimer() {
+            if (timerStarted) return;
+            timerStarted = true;
+            timerInterval = setInterval(() => {
+                timeSeconds++;
+                const mins = Math.floor(timeSeconds / 60);
+                const secs = timeSeconds % 60;
+                timeEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerStarted = false;
+        }
+
+        // Difficulty Selector Logic
+        difficultyBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                difficultyBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                currentCols = parseInt(this.getAttribute('data-cols'));
+                currentRows = parseInt(this.getAttribute('data-rows'));
+                
+                initGame();
+            });
+        });
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function initGame() {
+            // Reset Stats
+            moves = 0;
+            matches = 0;
+            timeSeconds = 0;
+            movesEl.textContent = moves;
+            timeEl.textContent = "0:00";
+            stopTimer();
+            hasFlippedCard = false;
+            lockBoard = false;
+            firstCard = null;
+            secondCard = null;
+            gameOverScreen.style.display = 'none';
+
+            // Calculate pairs needed
+            const totalCards = currentCols * currentRows;
+            totalPairs = totalCards / 2;
+
+            // Dynamically apply CSS Grid columns
+            board.style.gridTemplateColumns = `repeat(${currentCols}, 1fr)`;
+
+            // Select random emojis and create pairs
+            let selectedEmojis = shuffle([...emojiDictionary]).slice(0, totalPairs);
+            let deck = shuffle([...selectedEmojis, ...selectedEmojis]);
+
+            // Clear board and generate single-div cards
+            board.innerHTML = '';
+            deck.forEach(emoji => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.emoji = emoji;
+
+                card.innerHTML = `<span class="emoji-icon">${emoji}</span>`;
+                card.addEventListener('click', flipCard);
+                board.appendChild(card);
+            });
+        }
+
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === firstCard) return;
+
+            startTimer(); 
+
+            // Reveal the card
+            this.classList.add('revealed');
+
+            if (!hasFlippedCard) {
+                // First click
+                hasFlippedCard = true;
+                firstCard = this;
+                return;
+            }
+
+            // Second click
+            secondCard = this;
+            moves++;
+            movesEl.textContent = moves;
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.emoji === secondCard.dataset.emoji;
+
+            if (isMatch) {
+                disableCards();
+                matches++;
+                if (matches === totalPairs) {
+                    setTimeout(endGame, 500); 
+                }
+            } else {
+                unflipCards();
+            }
+        }
+
+        function disableCards() {
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+            
+            // Tag them as matched (keeps them revealed, but applies dimming via CSS)
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+
+            resetBoard();
+        }
+
+        function unflipCards() {
+            lockBoard = true; 
+
+            setTimeout(() => {
+                // Hide the cards again
+                firstCard.classList.remove('revealed');
+                secondCard.classList.remove('revealed');
+                resetBoard();
+            }, 800); 
+        }
+
+        function resetBoard() {
+            [hasFlippedCard, lockBoard] = [false, false];
+            [firstCard, secondCard] = [null, null];
+        }
+
+        function endGame() {
+            stopTimer();
+            finalMovesEl.textContent = moves;
+            finalTimeEl.textContent = timeEl.textContent;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        restartBtn.addEventListener('click', initGame);
+
+        // Start initial game on load
+        initGame();
+    </script>
+</body>
+</html>
