@@ -168,7 +168,6 @@
             margin-bottom: 2rem;
             max-width: 800px;
             padding: 0 20px;
-            /* Beautiful vibrant text gradient */
             background: linear-gradient(to right, #ff1493, #ff4500, #ff1493);
             background-size: 200% auto;
             color: #fff;
@@ -176,7 +175,6 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: shine 3s linear infinite;
-            /* Soft glow behind text */
             filter: drop-shadow(0px 2px 10px rgba(255, 105, 180, 0.4));
         }
 
@@ -184,7 +182,6 @@
             to { background-position: 200% center; }
         }
 
-        /* Animation for when a new message appears */
         .slide-up-fade {
             animation: slideUpFade 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
@@ -197,6 +194,8 @@
     </style>
 </head>
 <body>
+
+    <audio id="romantic-music" src="audio/loveYousong.mp3" loop></audio>
 
     <div class="auth-container" id="auth-box">
         <div id="auth-view">
@@ -233,6 +232,9 @@
             const authBox = document.getElementById('auth-box');
             const counterText = document.getElementById('counter-text');
             const hintText = document.getElementById('hint-text');
+            
+            // Audio element
+            const bgMusic = document.getElementById('romantic-music');
 
             // Success Story Progression Elements
             const storyContainer = document.getElementById('story-container');
@@ -242,12 +244,10 @@
             let attempts = 0;
             const correctCode = "simi72";
 
-            // Cute error messages and emojis
             const wrongMessages = ["Oops! Try again sweetie 🥺", "Not quite right! 💔", "Are you guessing? 🤨", "Hmm... nope! 🌸", "Close, but no cigar! ✨"];
             const wrongEmojis = ["❌", "🥺", "💔", "🥀", "😅", "☁️", "💧"];
             const rightEmojis = ["❤️", "💖", "✨", "🌸", "🥰", "🎉", "🦋"];
 
-            // Updated Hints for "simi72"
             const hints = [
                 "Hint: It's a mix of letters and numbers...",
                 "Hint: It starts with your beautiful name...",
@@ -256,7 +256,6 @@
                 "Okay, just type simi72 silly! 🤦‍♂️"
             ];
 
-            // The romantic story messages array
             const loveStory = [
                 "You cracked the code! 💖",
                 "I just wanted to take a little moment to say...",
@@ -274,7 +273,6 @@
             submitBtn.addEventListener('click', checkPasscode);
 
             function checkPasscode() {
-                // .trim() removes spaces, .toLowerCase() makes it case insensitive!
                 const code = inputField.value.trim().toLowerCase(); 
                 
                 if (code === correctCode) {
@@ -288,58 +286,50 @@
                 attempts++;
                 counterText.innerText = `Attempts: ${attempts}`;
                 
-                // Show hint based on attempt count
                 let hintIndex = Math.min(attempts - 1, hints.length - 1);
                 hintText.innerText = hints[hintIndex];
 
-                // Add shake animation
                 authBox.classList.add('shake');
                 setTimeout(() => authBox.classList.remove('shake'), 400);
 
                 inputField.value = '';
 
-                // Spawn ONE readable floating message near the top of the box
                 spawnFloatingMessage(wrongMessages[Math.floor(Math.random() * wrongMessages.length)]);
                 
-                // Spawn MULTIPLE emojis across the entire screen
                 for(let i=0; i<6; i++) {
                     setTimeout(() => spawnFloatingEmoji(wrongEmojis[Math.floor(Math.random() * wrongEmojis.length)]), i * 150);
                 }
             }
 
             function triggerSuccess() {
-                // Change UI state
+                // Play the music!
+                bgMusic.play().catch(error => console.log("Audio playback was prevented by the browser:", error));
+
                 authView.style.display = 'none';
                 successView.style.display = 'flex';
                 
-                // Make the box expand and become totally transparent
                 authBox.style.maxWidth = "900px";
                 authBox.style.background = "transparent";
                 authBox.style.border = "none";
                 authBox.style.boxShadow = "none";
                 authBox.style.backdropFilter = "none";
 
-                // Set initial story message
                 storyContainer.innerHTML = loveStory[currentStoryIndex];
 
-                // Generate hearts across the whole screen continuously
                 setInterval(() => spawnFloatingEmoji(rightEmojis[Math.floor(Math.random() * rightEmojis.length)]), 100);
             }
 
-            // Next Button Logic
             nextMsgBtn.addEventListener('click', () => {
                 currentStoryIndex++;
                 
-                // Re-trigger the CSS animation so it slides up and fades in again
                 storyContainer.classList.remove('slide-up-fade');
-                void storyContainer.offsetWidth; // Trigger reflow to restart animation
+                void storyContainer.offsetWidth; 
                 storyContainer.classList.add('slide-up-fade');
 
                 if (currentStoryIndex < loveStory.length) {
                     storyContainer.innerHTML = loveStory[currentStoryIndex];
                 } 
                 
-                // If it's the last message, swap the buttons
                 if (currentStoryIndex === loveStory.length - 1) {
                     nextMsgBtn.style.display = 'none';
                     finalBtn.style.display = 'inline-block';
